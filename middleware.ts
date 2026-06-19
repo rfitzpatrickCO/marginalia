@@ -1,12 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { hmacSha256Hex } from "./lib/edge-hmac";
 
 /*
  * Self-contained on purpose: middleware runs on the Edge runtime, so it must not
- * share a module with the Node-runtime route handlers/server actions. Importing
- * `@/lib/auth` (which is also used by Node code) makes Vercel's Edge bundler pull
- * in a Node `crypto` shim and fail with "referencing unsupported modules". The
- * session-cookie format below mirrors `sessionToken()` in lib/auth.ts exactly,
- * so cookies set at login validate here.
+ * share a module with the Node-runtime route handlers/server actions, and it
+ * avoids Web Crypto (`crypto.subtle`) entirely — referencing it makes Vercel's
+ * Edge bundler inject a crypto shim that fails to initialize on the real Edge
+ * runtime (MIDDLEWARE_INVOCATION_FAILED). The pure-JS HMAC in lib/edge-hmac.ts
+ * produces output identical to `sessionToken()` in lib/auth.ts, so cookies set
+ * at login validate here.
  */
 
 const SESSION_COOKIE = "marginalia_session";
@@ -19,33 +21,19 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
-/** Expected session-cookie value for the current password (HMAC, hex). */
-async function expectedToken(): Promise<string> {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(process.env.APP_PASSWORD ?? ""),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    enc.encode("marginalia-session-v1"),
-  );
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
+export function middleware(req: NextRequest) {
+  const password = process.env.APP_PASSWORD;
 
-export async function middleware(req: NextRequest) {
   // No password configured → leave the app open (dev / pre-setup).
-  if (!process.env.APP_PASSWORD) return NextResponse.next();
+  if (!password) return NextResponse.next();
 
-  const cookie = req.cookies.get(SESSION_COOKIE)?.value;
-  if (cookie && safeEqual(cookie, await expectedToken())) {
-    return NextResponse.next();
+  try {
+    const cookie = req.cookies.get(SESSION_COOKIE)?.value;
+    const expected = hmacSha256Hex(password, "marginalia-session-v1");
+    if (cookie && safeEqual(cookie, expected)) return NextResponse.next();
+  } catch (err) {
+    // Fail closed (fall through to the login redirect) rather than 500.
+    console.error("middleware auth check failed:", err);
   }
 
   const url = req.nextUrl.clone();
