@@ -102,6 +102,33 @@ button {
   background: var(--bg);
 }
 
+/* On laptops/desktops the phone column floats in empty space, so frame it as a
+   deliberate centered pane against a softly tinted backdrop. Mobile is untouched. */
+@media (min-width: 600px) {
+  body {
+    background:
+      radial-gradient(
+        1100px 520px at 50% -8%,
+        color-mix(in oklab, var(--tint) 9%, transparent),
+        transparent
+      ),
+      color-mix(in oklab, var(--label) 6%, var(--bg-elev-2));
+    background-attachment: fixed;
+  }
+  .app {
+    box-shadow:
+      0 0 0 0.5px var(--sep-op),
+      0 0 80px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* A little more room on real laptops (keeps the tab bar aligned via --app-max). */
+@media (min-width: 768px) {
+  :root {
+    --app-max: 540px;
+  }
+}
+
 /* ---------- nav bar ---------- */
 .nav {
   position: sticky;
