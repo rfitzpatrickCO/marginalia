@@ -6,6 +6,7 @@ import { Nav } from "@/components/Nav";
 import { EditBookSheet } from "@/components/EditBookSheet";
 import { LogSessionSheet } from "@/components/LogSessionSheet";
 import { QuotesSection } from "@/components/QuotesSection";
+import { requireAuth } from "@/lib/auth";
 import { FORMAT_LABELS, progress } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export default async function BookDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireAuth();
   const { id } = await params;
   const book = await getBook(id);
   if (!book) notFound();

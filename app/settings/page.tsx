@@ -1,9 +1,10 @@
-import { authEnabled } from "@/lib/auth";
+import { authEnabled, requireAuth } from "@/lib/auth";
 import { logout } from "@/app/login/actions";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { GoodreadsImport } from "@/components/GoodreadsImport";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  await requireAuth();
   return (
     <main className="scroll">
       <h1 className="large-title">Settings</h1>

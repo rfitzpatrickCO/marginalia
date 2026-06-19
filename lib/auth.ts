@@ -4,12 +4,13 @@
  *  - Web UI: a password (`APP_PASSWORD`) exchanged at /login for an httpOnly
  *    session cookie. The cookie value is an HMAC keyed by the password, so it
  *    can't be forged and changing the password invalidates old sessions.
+ *    Protected pages call `requireAuth()` (Node runtime) to enforce it.
  *  - iOS Shortcuts / API: a bearer token (`API_TOKEN`) sent as
  *    `Authorization: Bearer <token>` on /api/* requests.
- *
- * Uses only Web Crypto + standard APIs so it runs in the edge middleware as
- * well as Node route handlers and server actions.
  */
+
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export const SESSION_COOKIE = "marginalia_session";
 
@@ -46,6 +47,18 @@ async function hmacHex(secret: string, message: string): Promise<string> {
  *  (self-contained) Edge middleware; keep the two in sync. */
 export function sessionToken(): Promise<string> {
   return hmacHex(process.env.APP_PASSWORD ?? "", "marginalia-session-v1");
+}
+
+/** Server-side guard for protected pages and route handlers. Redirects to
+ *  /login when a password is configured and the session cookie is missing or
+ *  invalid. Runs in the Node runtime (server components / route handlers). */
+export async function requireAuth(): Promise<void> {
+  if (!authEnabled()) return;
+  const jar = await cookies();
+  const cookie = jar.get(SESSION_COOKIE)?.value;
+  if (!cookie || !safeEqual(cookie, await sessionToken())) {
+    redirect("/login");
+  }
 }
 
 /** True when the submitted login password matches `APP_PASSWORD`. */
