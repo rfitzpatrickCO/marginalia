@@ -42,15 +42,10 @@ async function hmacHex(secret: string, message: string): Promise<string> {
     .join("");
 }
 
-/** The expected session-cookie value for the current password. */
+/** The expected session-cookie value for the current password. Mirrored by the
+ *  (self-contained) Edge middleware; keep the two in sync. */
 export function sessionToken(): Promise<string> {
   return hmacHex(process.env.APP_PASSWORD ?? "", "marginalia-session-v1");
-}
-
-/** True when the cookie value matches the current password's session token. */
-export async function isValidSession(value: string | undefined): Promise<boolean> {
-  if (!value || !authEnabled()) return false;
-  return safeEqual(value, await sessionToken());
 }
 
 /** True when the submitted login password matches `APP_PASSWORD`. */
