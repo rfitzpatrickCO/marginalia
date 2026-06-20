@@ -39,7 +39,7 @@ export default async function HomePage() {
           Start a book from your library.
         </div>
       ) : (
-        <div className="group">
+        <div className="group card-grid">
           {reading.map((b) => (
             <Link
               key={b.id}

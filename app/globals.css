@@ -1131,17 +1131,17 @@ a.row:active {
   .app {
     flex-direction: row;
     align-items: stretch;
-    max-width: 1000px;
+    max-width: 1440px;
   }
   .sidebar {
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    width: 232px;
+    width: 248px;
     position: sticky;
     top: 0;
     height: 100dvh;
-    padding: 26px 14px;
+    padding: 26px 16px;
     border-right: 0.5px solid var(--sep-op);
   }
   .main {
@@ -1157,12 +1157,43 @@ a.row:active {
     padding-bottom: 40px;
   }
 
-  /* More columns / room now that content isn't phone-width. */
+  /* Book-cover grids fill the wide content area with many columns. */
   .book-grid {
-    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
   }
   .stat-grid {
     grid-template-columns: repeat(4, 1fr);
+    max-width: 860px;
+  }
+
+  /* Turn single-column card lists (Currently Reading, Up Next) into a grid of
+     standalone cards that fills the space, instead of one stretched column. */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 12px;
+    margin: 8px 16px 4px;
+    background: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .card-grid > .cr-card,
+  .card-grid > .row {
+    background: var(--bg-elev);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .card-grid > .row + .row::before,
+  .card-grid > .cr-card + .cr-card::before {
+    display: none;
+  }
+  .card-grid .chevron {
+    display: none;
+  }
+
+  /* Keep long prose readable rather than stretched edge-to-edge. */
+  .body-text {
+    max-width: 760px;
   }
 
   /* Bottom sheets become centered dialogs. */

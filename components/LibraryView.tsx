@@ -128,7 +128,7 @@ export function LibraryView({ books }: { books: BookWithRelations[] }) {
                   : "Nothing on this shelf yet."}
               </div>
             ) : shelf === "reading" ? (
-              <div className="group">
+              <div className="group card-grid">
                 {shelfBooks.map((b) => (
                   <Link
                     key={b.id}
@@ -163,7 +163,7 @@ export function LibraryView({ books }: { books: BookWithRelations[] }) {
                 ))}
               </div>
             ) : shelf === "toread" ? (
-              <div className="group">
+              <div className="group card-grid">
                 {shelfBooks.map((b) => (
                   <Link key={b.id} href={`/book/${b.id}`} className="row inset-sep">
                     <Cover book={b} width={38} />
