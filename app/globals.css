@@ -102,6 +102,49 @@ button {
   background: var(--bg);
 }
 
+/* The main wrapper is invisible on mobile (children flow straight into .app, so
+   the phone layout is unchanged); on desktop it becomes the content pane next to
+   the sidebar. */
+.main {
+  display: contents;
+}
+
+/* Desktop sidebar nav — hidden on mobile (the bottom TabBar is used instead). */
+.sidebar {
+  display: none;
+}
+.sidebar-brand {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  padding: 4px 12px 20px;
+}
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--label-2);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.sidebar-item:hover {
+  background: var(--fill-2);
+}
+.sidebar-item.sel {
+  background: var(--fill);
+  color: var(--tint);
+  font-weight: 600;
+}
+
 /* On laptops/desktops the phone column floats in empty space, so frame it as a
    deliberate centered pane against a softly tinted backdrop. Mobile is untouched. */
 @media (min-width: 600px) {
@@ -931,4 +974,66 @@ a.row:active {
   background: var(--bg-elev);
   box-shadow: var(--shadow);
   font-weight: 600;
+}
+
+/* ---------- true desktop layout: sidebar + wide content pane ----------
+   Placed last so these overrides win over the mobile base rules above
+   (media queries don't add specificity — source order decides). */
+@media (min-width: 900px) {
+  .app {
+    flex-direction: row;
+    align-items: stretch;
+    max-width: 1000px;
+  }
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 232px;
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    padding: 26px 14px;
+    border-right: 0.5px solid var(--sep-op);
+  }
+  .main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+  .tabbar {
+    display: none;
+  }
+  .scroll {
+    padding-bottom: 40px;
+  }
+
+  /* More columns / room now that content isn't phone-width. */
+  .book-grid {
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  }
+  .stat-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  /* Bottom sheets become centered dialogs. */
+  .sheet-overlay {
+    align-items: center;
+  }
+  .sheet {
+    max-width: 460px;
+    border-radius: 16px;
+    max-height: 86dvh;
+    animation: sheet-pop 0.18s ease;
+  }
+  .sheet-grabber {
+    display: none;
+  }
+}
+@keyframes sheet-pop {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
 }

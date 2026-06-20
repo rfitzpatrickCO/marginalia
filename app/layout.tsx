@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { TabBar } from "@/components/TabBar";
+import { Sidebar } from "@/components/Sidebar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,7 +35,8 @@ export default function RootLayout({
       <body>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <div className="app">
-          {children}
+          <Sidebar />
+          <div className="main">{children}</div>
           <TabBar />
         </div>
       </body>
