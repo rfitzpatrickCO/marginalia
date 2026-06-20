@@ -809,6 +809,9 @@ a.row:active {
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  /* Lift the sheet above the on-screen keyboard (see KeyboardInset). */
+  padding-bottom: var(--kb, 0px);
+  transition: padding-bottom 0.18s ease;
   animation: sheet-fade 0.2s ease;
 }
 .sheet {
@@ -817,7 +820,7 @@ a.row:active {
   background: var(--bg-elev-2);
   border-radius: 14px 14px 0 0;
   padding: 8px 16px calc(20px + env(safe-area-inset-bottom));
-  max-height: 92dvh;
+  max-height: min(92dvh, calc(100dvh - var(--kb, 0px) - 12px));
   overflow-y: auto;
   animation: sheet-rise 0.26s cubic-bezier(0.32, 0.72, 0, 1);
 }

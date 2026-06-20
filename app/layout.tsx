@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { TabBar } from "@/components/TabBar";
 import { Sidebar } from "@/components/Sidebar";
+import { KeyboardInset } from "@/components/KeyboardInset";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default function RootLayout({
     <html lang="en" data-theme="light" suppressHydrationWarning>
       <body>
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+        <KeyboardInset />
         <div className="app">
           <Sidebar />
           <div className="main">{children}</div>
