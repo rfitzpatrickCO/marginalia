@@ -2,6 +2,7 @@ import { authEnabled, requireAuth } from "@/lib/auth";
 import { logout } from "@/app/login/actions";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { GoodreadsImport } from "@/components/GoodreadsImport";
+import { SyncCovers } from "@/components/SyncCovers";
 
 export default async function SettingsPage() {
   await requireAuth();
@@ -19,7 +20,7 @@ export default async function SettingsPage() {
 
       <div className="section-header">Library</div>
       <GoodreadsImport />
-      <div className="group">
+      <div className="group spaced">
         <a className="row" href="/export" download>
           <span className="row-label">
             <span className="row-title">Export library</span>
@@ -30,6 +31,7 @@ export default async function SettingsPage() {
       <div className="section-footer">
         Works with Goodreads and Hardcover imports.
       </div>
+      <SyncCovers />
 
       {authEnabled() && (
         <>

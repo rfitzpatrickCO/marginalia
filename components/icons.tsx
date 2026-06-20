@@ -16,6 +16,15 @@ function base({ size = 22, ...props }: IconProps) {
   };
 }
 
+export function HomeIcon(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <path d="M3 10.5 12 3l9 7.5" />
+      <path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5" />
+    </svg>
+  );
+}
+
 export function BooksIcon(p: IconProps) {
   return (
     <svg {...base(p)}>

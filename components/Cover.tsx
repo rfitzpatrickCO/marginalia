@@ -22,6 +22,14 @@ export function Cover({
 }) {
   const tone = (book.tone && TONES[book.tone]) || DEFAULT;
   const height = Math.round(width * 1.5);
+  // Make Open Library return a 404 (not a gray placeholder) for missing covers,
+  // so CoverImage's onError reveals the generated fallback instead of a blank box.
+  const src =
+    book.coverUrl &&
+    book.coverUrl.includes("covers.openlibrary.org") &&
+    !book.coverUrl.includes("?")
+      ? `${book.coverUrl}?default=false`
+      : book.coverUrl;
   return (
     <div
       className="cover"
@@ -42,7 +50,7 @@ export function Cover({
       >
         {book.title}
       </div>
-      {book.coverUrl ? <CoverImage src={book.coverUrl} alt={book.title} /> : null}
+      {src ? <CoverImage src={src} alt={book.title} /> : null}
     </div>
   );
 }

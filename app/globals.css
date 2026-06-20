@@ -267,6 +267,10 @@ button {
 .section-header + .group {
   margin-top: 0;
 }
+/* Opt-in separation for standalone action groups (e.g. Settings rows). */
+.group.spaced {
+  margin-top: 16px;
+}
 .row {
   display: flex;
   align-items: center;
@@ -340,6 +344,47 @@ a.row:active {
   letter-spacing: -0.02em;
 }
 .search input::placeholder {
+  color: var(--label-2);
+}
+
+/* ---------- shelf tabs (Library) ---------- */
+.shelf-tabs {
+  display: flex;
+  gap: 2px;
+  margin: 8px 16px 2px;
+  padding: 2px;
+  background: var(--fill);
+  border-radius: 9px;
+}
+.shelf-tab {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--label);
+  padding: 7px 4px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.shelf-tab.sel {
+  background: var(--bg-elev);
+  box-shadow: var(--shadow);
+  font-weight: 600;
+}
+.shelf-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--label-3);
+}
+.shelf-tab.sel .shelf-count {
   color: var(--label-2);
 }
 
@@ -527,6 +572,13 @@ a.row:active {
   padding: 11px 16px;
   position: relative;
 }
+/* Clean 2×2 table separators (consistent on every cell). */
+.fact-grid .fact:nth-child(n + 3) {
+  border-top: 0.5px solid var(--sep-op);
+}
+.fact-grid .fact:nth-child(2n) {
+  border-left: 0.5px solid var(--sep-op);
+}
 .fact-k {
   color: var(--label-2);
   font-size: 13px;
@@ -661,6 +713,12 @@ a.row:active {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   padding: 8px 16px 6px;
+}
+.stat-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.stat-grid-3 .stat-num {
+  font-size: 26px;
 }
 .stat-card {
   background: var(--bg-elev);
@@ -891,7 +949,13 @@ a.row:active {
 .detail-actions {
   display: flex;
   justify-content: center;
+  gap: 10px;
   padding: 16px 16px 4px;
+}
+.detail-finished {
+  color: var(--label-2);
+  font-size: 14px;
+  margin-top: 8px;
 }
 
 /* ---------- book lookup (add sheet) ---------- */

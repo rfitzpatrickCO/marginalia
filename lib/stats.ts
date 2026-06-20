@@ -19,6 +19,52 @@ export type Stats = {
   monthLabels: MonthLabel[];
 };
 
+const MONTHS_FULL = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+export type MonthStats = {
+  label: string;
+  booksThisMonth: number;
+  pagesThisMonth: number;
+  currentStreak: number;
+};
+
+/** Lightweight stats for the home dashboard: this calendar month + streak. */
+export async function getMonthStats(): Promise<MonthStats> {
+  const books = await getBooks();
+  const now = new Date();
+  const y = now.getFullYear();
+  const mo = now.getMonth();
+
+  const pagesByDay = new Map<string, number>();
+  let pagesThisMonth = 0;
+  for (const book of books) {
+    for (const s of book.sessions) {
+      const d = new Date(s.date);
+      pagesByDay.set(dayKey(d), (pagesByDay.get(dayKey(d)) ?? 0) + s.pagesRead);
+      if (d.getFullYear() === y && d.getMonth() === mo) pagesThisMonth += s.pagesRead;
+    }
+  }
+
+  const booksThisMonth = books.filter(
+    (b) =>
+      b.status === "finished" &&
+      b.finishDate &&
+      b.finishDate.getFullYear() === y &&
+      b.finishDate.getMonth() === mo,
+  ).length;
+
+  const { currentStreak } = computeStreaks(pagesByDay, now);
+  return {
+    label: `${MONTHS_FULL[mo]} ${y}`,
+    booksThisMonth,
+    pagesThisMonth,
+    currentStreak,
+  };
+}
+
 // Pages-read-per-day thresholds for the five heatmap shades.
 function heatLevel(pages: number): HeatLevel {
   if (pages <= 0) return 0;

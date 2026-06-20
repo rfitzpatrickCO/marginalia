@@ -172,3 +172,23 @@ export async function deleteQuote(id: string, bookId: string): Promise<void> {
   await db.delete(quotes).where(eq(quotes.id, id));
   if (bookId) revalidateBook(bookId);
 }
+
+/** One-tap "mark as read": finish a book, dating it now and completing progress. */
+export async function markFinished(formData: FormData): Promise<void> {
+  if (!hasDatabase || !db) return;
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const book = await db.query.books.findFirst({ where: eq(books.id, id) });
+  if (!book) return;
+
+  await db
+    .update(books)
+    .set({
+      status: "finished",
+      finishDate: book.finishDate ?? new Date(),
+      startDate: book.startDate ?? new Date(),
+      currentPage: book.pageCount > 0 ? book.pageCount : book.currentPage,
+    })
+    .where(eq(books.id, id));
+  revalidateBook(id);
+}

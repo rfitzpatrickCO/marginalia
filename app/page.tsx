@@ -3,5 +3,5 @@ import { requireAuth } from "@/lib/auth";
 
 export default async function Home() {
   await requireAuth();
-  redirect("/library");
+  redirect("/home");
 }

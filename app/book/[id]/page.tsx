@@ -7,7 +7,11 @@ import { EditBookSheet } from "@/components/EditBookSheet";
 import { LogSessionSheet } from "@/components/LogSessionSheet";
 import { QuotesSection } from "@/components/QuotesSection";
 import { requireAuth } from "@/lib/auth";
+import { markFinished } from "./actions";
 import { FORMAT_LABELS, progress } from "@/lib/types";
+
+const monthYear = (d: Date) =>
+  d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +55,11 @@ export default async function BookDetailPage({
               <Stars rating={book.rating} size={18} />
             </div>
           )}
+          {book.status === "finished" && book.finishDate && (
+            <div className="detail-finished">
+              Finished {monthYear(new Date(book.finishDate))}
+            </div>
+          )}
         </div>
 
         {book.status === "reading" && (
@@ -77,6 +86,12 @@ export default async function BookDetailPage({
         {book.status !== "finished" && (
           <div className="detail-actions">
             <LogSessionSheet book={book} />
+            <form action={markFinished}>
+              <input type="hidden" name="id" value={book.id} />
+              <button type="submit" className="btn-secondary">
+                Mark as read
+              </button>
+            </form>
           </div>
         )}
 
@@ -84,11 +99,9 @@ export default async function BookDetailPage({
         <div className="group">
           <div className="fact-grid">
             {facts.map(([k, v], i) => (
-              <div className="fact row" key={`${k}-${i}`}>
-                <div>
-                  <div className="fact-k">{k}</div>
-                  <div className="fact-v">{v}</div>
-                </div>
+              <div className="fact" key={`${k}-${i}`}>
+                <div className="fact-k">{k}</div>
+                <div className="fact-v">{v}</div>
               </div>
             ))}
           </div>

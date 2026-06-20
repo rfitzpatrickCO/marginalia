@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { eq } from "drizzle-orm";
 import { db, hasDatabase } from "@/lib/db";
 import { books } from "@/lib/db/schema";
 import { parseGoodreadsCsv } from "@/lib/goodreads";
@@ -53,4 +54,75 @@ export async function importGoodreads(csvText: string): Promise<ImportState> {
     imported: toInsert.length,
     skipped: parsed.length - toInsert.length,
   };
+}
+
+export type SyncCoversState = {
+  ok: boolean;
+  updated?: number;
+  checked?: number;
+  error?: string;
+};
+
+/** Fetch a Google Books cover image for a book (its CDN loads reliably in bulk,
+ *  unlike Open Library which rate-limits when the library page loads many at
+ *  once). Returns a usable https URL or null. */
+async function googleCover(
+  isbn: string | null,
+  title: string,
+  author: string,
+): Promise<string | null> {
+  const key = process.env.GOOGLE_BOOKS_API_KEY;
+  const q = isbn
+    ? `isbn:${isbn}`
+    : `intitle:${title}${author ? ` inauthor:${author}` : ""}`;
+  const url =
+    "https://www.googleapis.com/books/v1/volumes?maxResults=1&q=" +
+    encodeURIComponent(q) +
+    (key ? `&key=${key}` : "");
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      items?: { volumeInfo?: { imageLinks?: { thumbnail?: string } } }[];
+    };
+    const thumb = data.items?.[0]?.volumeInfo?.imageLinks?.thumbnail;
+    return thumb
+      ? thumb.replace(/^http:/, "https:").replace(/&edge=curl/, "")
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Re-fetch cover art for every book from Google Books and store it, replacing
+ *  flaky Open Library URLs. Bounded concurrency to stay within the function
+ *  time limit. */
+export async function syncCovers(): Promise<SyncCoversState> {
+  if (!hasDatabase || !db) return { ok: false, error: "Database not configured." };
+
+  const all = await db.query.books.findMany({
+    columns: { id: true, title: true, author: true, isbn: true, coverUrl: true },
+  });
+
+  const queue = [...all];
+  let updated = 0;
+  async function worker() {
+    while (queue.length) {
+      const b = queue.shift();
+      if (!b) break;
+      const cover = await googleCover(b.isbn, b.title, b.author);
+      if (cover && cover !== b.coverUrl) {
+        await db!.update(books).set({ coverUrl: cover }).where(eq(books.id, b.id));
+        updated++;
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: 6 }, worker));
+
+  revalidatePath("/");
+  revalidatePath("/library");
+  return { ok: true, updated, checked: all.length };
 }

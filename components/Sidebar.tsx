@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BooksIcon, ChartIcon, GearIcon } from "./icons";
+import { BooksIcon, ChartIcon, GearIcon, HomeIcon } from "./icons";
 
 const ITEMS = [
+  { href: "/home", label: "Home", Icon: HomeIcon, match: ["/home"] },
   { href: "/library", label: "Library", Icon: BooksIcon, match: ["/library", "/book"] },
   { href: "/stats", label: "Stats", Icon: ChartIcon, match: ["/stats"] },
   { href: "/settings", label: "Settings", Icon: GearIcon, match: ["/settings"] },
