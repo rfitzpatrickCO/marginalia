@@ -8,6 +8,13 @@
       "when": 1781748245899,
       "tag": "0000_faithful_zaladane",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781966850311,
+      "tag": "0001_cold_venus",
+      "breakpoints": true
     }
   ]
 }

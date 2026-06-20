@@ -18,8 +18,26 @@ export const formatEnum = pgEnum("format", [
   "audiobook",
 ]);
 
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  name: text("name"),
+  apiToken: text("api_token").unique(),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
+// Emails the owner has invited (lowercased). Sign-up is gated to these + the owner.
+export const invites = pgTable("invites", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
 export const books = pgTable("books", {
   id: uuid("id").primaryKey().defaultRandom(),
+  // Nullable for the additive migration; backfilled to the owner, then always set.
+  userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   author: text("author").notNull(),
   series: text("series"),

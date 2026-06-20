@@ -2,41 +2,48 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { login, type AuthState } from "./actions";
+import { signup, type AuthState } from "@/app/login/actions";
 
 const initial: AuthState = {};
 
-export default function LoginPage() {
-  const [state, action, pending] = useActionState(login, initial);
+export default function SignupPage() {
+  const [state, action, pending] = useActionState(signup, initial);
 
   return (
     <main className="login">
       <form className="login-card" action={action}>
         <div className="login-mark">Marginalia</div>
-        <p className="login-sub">Sign in to your library.</p>
+        <p className="login-sub">Create your account.</p>
+        <input
+          className="login-input"
+          name="name"
+          placeholder="Name"
+          autoComplete="name"
+          autoFocus
+          aria-label="Name"
+        />
         <input
           className="login-input"
           type="email"
           name="email"
           placeholder="Email"
           autoComplete="email"
-          autoFocus
           aria-label="Email"
         />
         <input
           className="login-input"
           type="password"
           name="password"
-          placeholder="Password"
-          autoComplete="current-password"
+          placeholder="Password (8+ characters)"
+          autoComplete="new-password"
           aria-label="Password"
         />
         {state.error ? <p className="login-error">{state.error}</p> : null}
         <button className="login-btn" type="submit" disabled={pending}>
-          {pending ? "Signing in…" : "Sign in"}
+          {pending ? "Creating account…" : "Create account"}
         </button>
         <p className="login-alt">
-          Have an invite? <Link href="/signup">Create an account</Link>
+          Already have an account? <Link href="/login">Sign in</Link>
         </p>
       </form>
     </main>

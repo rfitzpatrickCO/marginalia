@@ -1,78 +1,107 @@
 /**
- * Single-user auth. Two independent mechanisms:
+ * Multi-user auth (self-contained, email + password).
  *
- *  - Web UI: a password (`APP_PASSWORD`) exchanged at /login for an httpOnly
- *    session cookie. The cookie value is an HMAC keyed by the password, so it
- *    can't be forged and changing the password invalidates old sessions.
- *    Protected pages call `requireAuth()` (Node runtime) to enforce it.
- *  - iOS Shortcuts / API: a bearer token (`API_TOKEN`) sent as
- *    `Authorization: Bearer <token>` on /api/* requests.
+ *  - Web: email + password → an httpOnly session cookie carrying the user id,
+ *    signed with AUTH_SECRET so it can't be forged. Pages call requireUser().
+ *  - iOS Shortcuts / API: a per-user bearer token (users.api_token).
+ *  - The "owner" (OWNER_EMAIL) can sign up without an invite and send invites.
  */
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { eq } from "drizzle-orm";
+import { db } from "./db";
+import { users } from "./db/schema";
 
-export const SESSION_COOKIE = "marginalia_session";
+export type User = typeof users.$inferSelect;
 
-/** True when web-login is configured. When false the app is left open, mirroring
- *  the sample-data fallback so the UI is usable before secrets are wired up. */
-export function authEnabled(): boolean {
-  return Boolean(process.env.APP_PASSWORD);
+const SESSION_COOKIE = "marginalia_session";
+
+function authSecret(): string {
+  // AUTH_SECRET is required in production; fall back only for local dev.
+  return process.env.AUTH_SECRET || process.env.APP_PASSWORD || "marginalia-dev-secret";
 }
 
-/** Constant-time string comparison to avoid leaking length/content via timing. */
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
+// ---------- passwords (scrypt) ----------
+
+export function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
 }
 
-async function hmacHex(secret: string, message: string): Promise<string> {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+export function verifyPassword(password: string, stored: string): boolean {
+  const [salt, hash] = stored.split(":");
+  if (!salt || !hash) return false;
+  const expected = Buffer.from(hash, "hex");
+  const actual = scryptSync(password, salt, 64);
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-/** The expected session-cookie value for the current password. Mirrored by the
- *  (self-contained) Edge middleware; keep the two in sync. */
-export function sessionToken(): Promise<string> {
-  return hmacHex(process.env.APP_PASSWORD ?? "", "marginalia-session-v1");
+// ---------- sessions ----------
+
+function sign(userId: string): string {
+  return createHmac("sha256", authSecret()).update(userId).digest("hex");
 }
 
-/** Server-side guard for protected pages and route handlers. Redirects to
- *  /login when a password is configured and the session cookie is missing or
- *  invalid. Runs in the Node runtime (server components / route handlers). */
-export async function requireAuth(): Promise<void> {
-  if (!authEnabled()) return;
+export async function createSession(userId: string): Promise<void> {
   const jar = await cookies();
-  const cookie = jar.get(SESSION_COOKIE)?.value;
-  if (!cookie || !safeEqual(cookie, await sessionToken())) {
-    redirect("/login");
-  }
+  jar.set(SESSION_COOKIE, `${userId}.${sign(userId)}`, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
 }
 
-/** True when the submitted login password matches `APP_PASSWORD`. */
-export function checkPassword(input: string): boolean {
-  const expected = process.env.APP_PASSWORD ?? "";
-  return expected.length > 0 && safeEqual(input, expected);
+export async function clearSession(): Promise<void> {
+  (await cookies()).delete(SESSION_COOKIE);
 }
 
-/** Validate `Authorization: Bearer <API_TOKEN>` on an incoming API request. */
-export function checkBearer(req: Request): boolean {
-  const expected = process.env.API_TOKEN ?? "";
-  if (!expected) return false;
+async function sessionUserId(): Promise<string | null> {
+  const value = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!value) return null;
+  const dot = value.lastIndexOf(".");
+  if (dot < 0) return null;
+  const userId = value.slice(0, dot);
+  const sig = Buffer.from(value.slice(dot + 1));
+  const expected = Buffer.from(sign(userId));
+  if (sig.length !== expected.length || !timingSafeEqual(sig, expected)) return null;
+  return userId;
+}
+
+// ---------- current user ----------
+
+/** The signed-in user, or null. */
+export async function getCurrentUser(): Promise<User | null> {
+  if (!db) return null;
+  const id = await sessionUserId();
+  if (!id) return null;
+  return (await db.query.users.findFirst({ where: eq(users.id, id) })) ?? null;
+}
+
+/** Require a signed-in user; redirect to /login otherwise. */
+export async function requireUser(): Promise<User> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  return user;
+}
+
+/** True for the single owner account (set via OWNER_EMAIL). */
+export function isOwner(user: Pick<User, "email">): boolean {
+  const owner = process.env.OWNER_EMAIL?.trim().toLowerCase();
+  return Boolean(owner) && user.email.toLowerCase() === owner;
+}
+
+/** Resolve a request's `Authorization: Bearer <token>` to its owning user. */
+export async function userFromBearer(req: Request): Promise<User | null> {
+  if (!db) return null;
   const header = req.headers.get("authorization") ?? "";
   const prefix = "Bearer ";
-  if (!header.startsWith(prefix)) return false;
-  return safeEqual(header.slice(prefix.length).trim(), expected);
+  if (!header.startsWith(prefix)) return null;
+  const token = header.slice(prefix.length).trim();
+  if (!token) return null;
+  return (await db.query.users.findFirst({ where: eq(users.apiToken, token) })) ?? null;
 }

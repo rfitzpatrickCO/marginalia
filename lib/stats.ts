@@ -32,8 +32,8 @@ export type MonthStats = {
 };
 
 /** Lightweight stats for the home dashboard: this calendar month + streak. */
-export async function getMonthStats(): Promise<MonthStats> {
-  const books = await getBooks();
+export async function getMonthStats(userId: string): Promise<MonthStats> {
+  const books = await getBooks(userId);
   const now = new Date();
   const y = now.getFullYear();
   const mo = now.getMonth();
@@ -88,8 +88,8 @@ const MONTHS = [
 ];
 
 /** Aggregate reading stats from the library. ~53 weeks of heatmap ending today. */
-export async function getStats(): Promise<Stats> {
-  const books = await getBooks();
+export async function getStats(userId: string): Promise<Stats> {
+  const books = await getBooks(userId);
   const now = new Date();
   const year = now.getFullYear();
 

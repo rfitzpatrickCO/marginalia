@@ -220,6 +220,7 @@ function materialize(seed: Seed, index: number): BookWithRelations {
 
   return {
     id,
+    userId: null,
     title: seed.title,
     author: seed.author,
     series: seed.series ?? null,

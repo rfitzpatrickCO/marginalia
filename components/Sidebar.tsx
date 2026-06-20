@@ -13,9 +13,11 @@ const ITEMS = [
 
 /** Left navigation rail shown on desktop (≥900px). Hidden on mobile via CSS,
  *  where the bottom TabBar is used instead. */
+const HIDDEN = ["/login", "/signup", "/onboarding"];
+
 export function Sidebar() {
   const pathname = usePathname();
-  if (pathname === "/login") return null;
+  if (HIDDEN.includes(pathname)) return null;
 
   return (
     <aside className="sidebar">

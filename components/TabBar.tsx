@@ -11,9 +11,11 @@ const TABS = [
   { href: "/settings", label: "Settings", Icon: GearIcon, match: ["/settings"] },
 ];
 
+const HIDDEN = ["/login", "/signup", "/onboarding"];
+
 export function TabBar() {
   const pathname = usePathname();
-  if (pathname === "/login") return null;
+  if (HIDDEN.includes(pathname)) return null;
   return (
     <nav className="tabbar">
       {TABS.map(({ href, label, Icon, match }) => {

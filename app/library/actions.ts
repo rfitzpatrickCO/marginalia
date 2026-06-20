@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db, hasDatabase } from "@/lib/db";
 import { books } from "@/lib/db/schema";
+import { getCurrentUser } from "@/lib/auth";
 import { searchBooks as searchBooksApi, type BookSearchResult } from "@/lib/book-search";
 
 const STATUSES = ["reading", "toread", "finished"] as const;
@@ -34,6 +35,8 @@ export async function createBook(
   if (!hasDatabase || !db) {
     return { ok: false, error: "Database not configured." };
   }
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Not signed in." };
 
   const title = String(formData.get("title") ?? "").trim();
   const author = String(formData.get("author") ?? "").trim();
@@ -56,6 +59,7 @@ export async function createBook(
 
   const now = new Date();
   await db.insert(books).values({
+    userId: user.id,
     title,
     author,
     status,

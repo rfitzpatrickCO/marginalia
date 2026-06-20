@@ -1,12 +1,12 @@
 import { getStats } from "@/lib/stats";
 import { Heatmap } from "@/components/Heatmap";
-import { requireAuth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function StatsPage() {
-  await requireAuth();
-  const s = await getStats();
+  const user = await requireUser();
+  const s = await getStats(user.id);
 
   const cards: Array<{ num: string; unit?: string; label: string }> = [
     { num: String(s.booksThisYear), label: `Books in ${s.year}` },

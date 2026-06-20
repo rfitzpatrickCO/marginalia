@@ -1,8 +1,8 @@
 import { revalidatePath } from "next/cache";
-import { eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db, hasDatabase } from "@/lib/db";
 import { books, readingSessions } from "@/lib/db/schema";
-import { checkBearer } from "@/lib/auth";
+import { userFromBearer } from "@/lib/auth";
 
 /**
  * Log a reading session from iOS Shortcuts. The book is matched by `bookId`
@@ -12,7 +12,8 @@ import { checkBearer } from "@/lib/auth";
  *   POST /api/sessions   { bookId? , title?, fromPage?, toPage, date? }
  */
 export async function POST(req: Request) {
-  if (!checkBearer(req)) {
+  const user = await userFromBearer(req);
+  if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!hasDatabase || !db) {
@@ -36,7 +37,10 @@ export async function POST(req: Request) {
   }
 
   const book = await db.query.books.findFirst({
-    where: bookId ? eq(books.id, bookId) : ilike(books.title, title),
+    where: and(
+      eq(books.userId, user.id),
+      bookId ? eq(books.id, bookId) : ilike(books.title, title),
+    ),
   });
   if (!book) {
     return Response.json({ error: "Book not found" }, { status: 404 });

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { requireAuth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 export default async function Home() {
-  await requireAuth();
+  await requireUser();
   redirect("/home");
 }

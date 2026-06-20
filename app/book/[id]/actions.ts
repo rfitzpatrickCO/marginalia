@@ -1,14 +1,26 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, hasDatabase } from "@/lib/db";
 import { books, quotes, readingSessions } from "@/lib/db/schema";
+import { getCurrentUser } from "@/lib/auth";
 
 const STATUSES = ["reading", "toread", "finished"] as const;
 const FORMATS = ["hardcover", "paperback", "ebook", "audiobook"] as const;
 
 export type ActionState = { ok: boolean; error?: string };
+
+/** Load a book only if it belongs to the signed-in user (else null). */
+async function ownedBook(bookId: string) {
+  if (!db || !bookId) return null;
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const book = await db.query.books.findFirst({
+    where: and(eq(books.id, bookId), eq(books.userId, user.id)),
+  });
+  return book ?? null;
+}
 
 function parseGenres(raw: FormDataEntryValue | null): string[] {
   if (typeof raw !== "string" || !raw) return [];
@@ -34,11 +46,7 @@ export async function updateBook(
   if (!hasDatabase || !db) return { ok: false, error: "Database not configured." };
 
   const id = String(formData.get("id") ?? "");
-  if (!id) return { ok: false, error: "Missing book id." };
-
-  const existing = await db.query.books.findFirst({
-    where: eq(books.id, id),
-  });
+  const existing = await ownedBook(id);
   if (!existing) return { ok: false, error: "Book not found." };
 
   const title = String(formData.get("title") ?? "").trim();
@@ -108,9 +116,7 @@ export async function logSession(
   if (!hasDatabase || !db) return { ok: false, error: "Database not configured." };
 
   const bookId = String(formData.get("bookId") ?? "");
-  if (!bookId) return { ok: false, error: "Missing book id." };
-
-  const book = await db.query.books.findFirst({ where: eq(books.id, bookId) });
+  const book = await ownedBook(bookId);
   if (!book) return { ok: false, error: "Book not found." };
 
   const toPage = Math.max(0, Math.trunc(Number(formData.get("toPage")) || 0));
@@ -151,34 +157,37 @@ export async function saveQuote(
   const bookId = String(formData.get("bookId") ?? "");
   const text = String(formData.get("text") ?? "").trim();
   if (!text) return { ok: false, error: "Quote text is required." };
+  if (!(await ownedBook(bookId))) return { ok: false, error: "Book not found." };
 
   const pageNum = Math.trunc(Number(formData.get("page")));
   const page = Number.isFinite(pageNum) && pageNum > 0 ? pageNum : null;
 
   if (id) {
-    await db.update(quotes).set({ text, page }).where(eq(quotes.id, id));
+    await db
+      .update(quotes)
+      .set({ text, page })
+      .where(and(eq(quotes.id, id), eq(quotes.bookId, bookId)));
   } else {
-    if (!bookId) return { ok: false, error: "Missing book id." };
     await db.insert(quotes).values({ bookId, text, page });
   }
 
-  if (bookId) revalidateBook(bookId);
+  revalidateBook(bookId);
   return { ok: true };
 }
 
 /** Delete a quote. Called imperatively (after a confirm) from the client. */
 export async function deleteQuote(id: string, bookId: string): Promise<void> {
   if (!hasDatabase || !db || !id) return;
-  await db.delete(quotes).where(eq(quotes.id, id));
-  if (bookId) revalidateBook(bookId);
+  if (!(await ownedBook(bookId))) return;
+  await db.delete(quotes).where(and(eq(quotes.id, id), eq(quotes.bookId, bookId)));
+  revalidateBook(bookId);
 }
 
 /** One-tap "mark as read": finish a book, dating it now and completing progress. */
 export async function markFinished(formData: FormData): Promise<void> {
   if (!hasDatabase || !db) return;
   const id = String(formData.get("id") ?? "");
-  if (!id) return;
-  const book = await db.query.books.findFirst({ where: eq(books.id, id) });
+  const book = await ownedBook(id);
   if (!book) return;
 
   await db

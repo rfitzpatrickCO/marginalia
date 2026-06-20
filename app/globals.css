@@ -678,7 +678,6 @@ a.row:active {
   background: var(--bg-elev);
   color: var(--label);
   outline: none;
-  text-align: center;
   box-shadow: 0 0 0 0.5px var(--sep-op);
 }
 .login-input:focus {
@@ -701,6 +700,88 @@ a.row:active {
 }
 .login-btn:active {
   opacity: 0.85;
+}
+.login-btn:disabled {
+  opacity: 0.5;
+}
+.login-alt {
+  font-size: 14px;
+  color: var(--label-2);
+  margin: 2px 0 0;
+}
+.login-alt a {
+  color: var(--tint);
+  font-weight: 600;
+}
+
+/* ---------- onboarding ---------- */
+.onboarding-lede {
+  padding: 0 20px 6px;
+  color: var(--label-2);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.onboarding-actions {
+  display: flex;
+  justify-content: center;
+  padding: 18px 16px 4px;
+}
+.onboarding-go {
+  width: auto;
+  padding: 13px 28px;
+  text-align: center;
+}
+
+/* ---------- invites + token ---------- */
+.invite-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px 8px 14px;
+}
+.invite-input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 16px;
+  border: 0;
+  background: none;
+  outline: none;
+  color: var(--label);
+}
+.invite-input::placeholder {
+  color: var(--label-3);
+}
+.invite-btn {
+  flex-shrink: 0;
+  border: 0;
+  background: var(--tint);
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 100px;
+}
+.invite-btn:disabled {
+  opacity: 0.5;
+}
+.invite-revoke {
+  flex-shrink: 0;
+  border: 0;
+  background: none;
+  color: var(--red);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 6px;
+}
+.token-value {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  color: var(--label);
+  user-select: all;
+  word-break: break-all;
 }
 .body-text {
   padding: 13px 16px;

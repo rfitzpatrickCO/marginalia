@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAuth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getBooks } from "@/lib/books";
 import { getMonthStats } from "@/lib/stats";
 import { Cover } from "@/components/Cover";
@@ -9,9 +9,9 @@ import { progress } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  await requireAuth();
-  const books = await getBooks();
-  const month = await getMonthStats();
+  const user = await requireUser();
+  const books = await getBooks(user.id);
+  const month = await getMonthStats(user.id);
 
   const reading = books
     .filter((b) => b.status === "reading")

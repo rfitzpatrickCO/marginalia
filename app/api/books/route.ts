@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { db, hasDatabase } from "@/lib/db";
 import { books } from "@/lib/db/schema";
-import { checkBearer } from "@/lib/auth";
+import { userFromBearer } from "@/lib/auth";
 
 const STATUSES = ["reading", "toread", "finished"] as const;
 const FORMATS = ["hardcover", "paperback", "ebook", "audiobook"] as const;
@@ -11,7 +11,8 @@ const FORMATS = ["hardcover", "paperback", "ebook", "audiobook"] as const;
  *   POST /api/books   { title, author, status?, pageCount?, format?, series?, seriesNumber? }
  */
 export async function POST(req: Request) {
-  if (!checkBearer(req)) {
+  const user = await userFromBearer(req);
+  if (!user) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   if (!hasDatabase || !db) {
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
   const [book] = await db
     .insert(books)
     .values({
+      userId: user.id,
       title,
       author,
       status,

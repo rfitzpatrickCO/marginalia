@@ -6,7 +6,7 @@ import { Nav } from "@/components/Nav";
 import { EditBookSheet } from "@/components/EditBookSheet";
 import { LogSessionSheet } from "@/components/LogSessionSheet";
 import { QuotesSection } from "@/components/QuotesSection";
-import { requireAuth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { markFinished } from "./actions";
 import { FORMAT_LABELS, progress } from "@/lib/types";
 
@@ -20,9 +20,9 @@ export default async function BookDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireAuth();
+  const user = await requireUser();
   const { id } = await params;
-  const book = await getBook(id);
+  const book = await getBook(user.id, id);
   if (!book) notFound();
 
   const facts: Array<[string, string]> = [
