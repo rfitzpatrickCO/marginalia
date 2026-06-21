@@ -11,13 +11,16 @@ You need two things:
 
 1. **Your app's base URL** — e.g. `https://your-app.vercel.app`. Shortcuts run
    on your phone, so this must be a deployed URL, not `localhost`.
-2. **Your `API_TOKEN`** — the value you set in `.env.local` (generate one with
-   `openssl rand -base64 32`). Treat it like a password.
+2. **Your personal API token** — open the web app, go to **Settings → Account →
+   iOS Shortcuts token**, and tap to generate one. It's shown once, so copy it
+   right away. The token is tied to *your* account, so anything you post lands in
+   your library (not anyone else's). Treat it like a password; tap again anytime
+   to regenerate (which invalidates the old one).
 
 Every request must include the header:
 
 ```
-Authorization: Bearer <API_TOKEN>
+Authorization: Bearer <YOUR_TOKEN>
 ```
 
 A missing or wrong token returns **401**. Throughout this doc, replace
@@ -167,7 +170,8 @@ A `201` with a JSON body means you're ready to build the Shortcut.
 - **Keeping the token safe:** the simplest approach is a **Text** action at the
   top of each Shortcut holding the token, referenced by the request header.
   Anyone with the token can write to your library, so don't share the Shortcut
-  with the token embedded.
+  with the token embedded. Lost it or shared it by accident? Regenerate it from
+  Settings → Account.
 - **Title matching** is exact (case-insensitive). If a session or quote returns
   `404`, check the title matches the book in your library, or pass `bookId`.
 - These endpoints only **write**. There's no read API; browse your library in
