@@ -375,8 +375,8 @@ a.row:active {
   white-space: nowrap;
 }
 .shelf-tab.sel {
-  background: var(--bg-elev);
-  box-shadow: var(--shadow);
+  background: var(--tint);
+  color: #fff;
   font-weight: 600;
 }
 .shelf-count {
@@ -385,7 +385,7 @@ a.row:active {
   color: var(--label-3);
 }
 .shelf-tab.sel .shelf-count {
-  color: var(--label-2);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 /* ---------- tab bar ---------- */
